@@ -1,0 +1,379 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DONOR
+  BENEFICIARY
+  ADMIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+  PAUSED
+  COMPLETED
+}
+
+enum VerificationStatus {
+  DRAFT
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_MORE_INFO
+}
+
+enum VerificationLevel {
+  UNVERIFIED
+  EMAIL_VERIFIED
+  IDENTITY_REVIEWED
+  FULLY_APPROVED
+}
+
+enum DocumentType {
+  NATIONAL_ID_FRONT
+  NATIONAL_ID_BACK
+  PROOF_OF_ADDRESS
+  MEDICAL_DOCUMENT
+  SCHOOL_FEE_SLIP
+  QUOTATION_INVOICE
+  PROFILE_SUPPORTING_IMAGE
+  OTHER_SUPPORTING_DOCUMENT
+}
+
+enum DocumentReviewStatus {
+  UPLOADED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_RESUBMISSION
+}
+
+enum NotificationType {
+  VERIFICATION_SUBMITTED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  MORE_INFO_REQUESTED
+  CAMPAIGN_SUBMITTED
+  CAMPAIGN_APPROVED
+  CAMPAIGN_REJECTED
+  CAMPAIGN_PUBLISHED
+}
+
+enum AuditEntityType {
+  USER
+  PROFILE
+  BENEFICIARY_PROFILE
+  CAMPAIGN
+  VERIFICATION_CASE
+  DOCUMENT
+  NOTIFICATION
+  REPORT
+  SYSTEM
+}
+
+enum AuditActionType {
+  SIGNUP
+  LOGIN
+  LOGOUT
+  ROLE_ASSIGNED
+  ROLE_CHANGED
+  PROFILE_UPDATED
+  ONBOARDING_STARTED
+  ONBOARDING_DRAFT_SAVED
+  ONBOARDING_SUBMITTED
+  DOCUMENT_UPLOADED
+  DOCUMENT_REPLACED
+  DOCUMENT_DELETED
+  DOCUMENT_REVIEWED
+  VERIFICATION_STATUS_CHANGED
+  CAMPAIGN_CREATED
+  CAMPAIGN_UPDATED
+  CAMPAIGN_SUBMITTED
+  CAMPAIGN_STATUS_CHANGED
+  REPORT_SUBMITTED
+  NOTIFICATION_CREATED
+}
+
+model User {
+  id                            String                @id @default(uuid()) @db.Uuid
+  clerkUserId                   String                @unique
+  email                         String                @unique
+  currentRole                   Role?
+  preferredLanguage             String                @default("en")
+  verificationLevel             VerificationLevel     @default(UNVERIFIED)
+  onboardingCompleted           Boolean               @default(false)
+  beneficiaryOnboardingComplete Boolean               @default(false)
+  lastSeenAt                    DateTime?
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+
+  profile                       Profile?
+  beneficiaryProfile            BeneficiaryProfile?
+  adminProfile                  AdminProfile?
+  roles                         UserRole[]
+  campaigns                     Campaign[]
+  verificationCases             VerificationCase[]    @relation("BeneficiaryVerificationCases")
+  assignedVerificationCases     VerificationCase[]    @relation("AssignedVerificationCases")
+  uploadedDocuments             Document[]            @relation("UploadedDocuments")
+  reviewedDocuments             Document[]            @relation("ReviewedDocuments")
+  auditLogs                     AuditLog[]            @relation("AuditActor")
+  notifications                 Notification[]
+  notificationPreference        NotificationPreference?
+  campaignUpdates               CampaignUpdate[]
+  moderationReports             ModerationReport[]    @relation("Reporter")
+  adminNotes                    AdminNote[]           @relation("AdminNotesAuthor")
+}
+
+model UserRole {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  role         Role
+  assignedById String?  @db.Uuid
+  assignedAt   DateTime @default(now())
+  isActive     Boolean  @default(true)
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, role])
+}
+
+model Profile {
+  id                           String   @id @default(uuid()) @db.Uuid
+  userId                       String   @unique @db.Uuid
+  fullName                     String?
+  displayName                  String?
+  avatarUrl                    String?
+  bio                          String?
+  country                      String?
+  city                         String?
+  preferredCategories          String[]
+  publicDonationHistoryEnabled Boolean  @default(false)
+  completionPercentage         Int      @default(0)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+
+  user                         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BeneficiaryProfile {
+  id                  String             @id @default(uuid()) @db.Uuid
+  userId              String             @unique @db.Uuid
+  legalFullName       String?
+  dateOfBirth         DateTime?
+  gender              String?
+  nationalIdNumber    String?
+  phoneNumber         String?
+  addressLine1        String?
+  city                String?
+  provinceOrState     String?
+  country             String?
+  nearbyLandmark      String?
+  bankName            String?
+  accountTitle        String?
+  accountNumberMasked String?
+  mobileWalletType    String?
+  onboardingStatus    VerificationStatus @default(DRAFT)
+  onboardingCompleted Boolean            @default(false)
+  submittedAt         DateTime?
+  showRealName        Boolean            @default(false)
+  showProfilePhoto    Boolean            @default(false)
+  showExactLocation   Boolean            @default(false)
+  allowDirectContact  Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminProfile {
+  id                     String   @id @default(uuid()) @db.Uuid
+  userId                 String   @unique @db.Uuid
+  title                  String?
+  department             String?
+  canManageVerifications Boolean  @default(true)
+  mfaRequired            Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationCase {
+  id              String             @id @default(uuid()) @db.Uuid
+  beneficiaryId   String             @db.Uuid
+  assignedAdminId String?            @db.Uuid
+  status          VerificationStatus @default(PENDING)
+  submissionNotes String?
+  decisionNotes   String?
+  submittedAt     DateTime           @default(now())
+  resolvedAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  beneficiary     User               @relation("BeneficiaryVerificationCases", fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  assignedAdmin   User?              @relation("AssignedVerificationCases", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  documents       Document[]
+  adminNotes      AdminNote[]
+
+  @@index([beneficiaryId, status])
+  @@index([assignedAdminId, status])
+}
+
+model Campaign {
+  id                       String         @id @default(uuid()) @db.Uuid
+  beneficiaryId            String         @db.Uuid
+  title                    String
+  slug                     String         @unique
+  shortDescription         String?
+  description              String?
+  category                 String?
+  urgency                  String?
+  targetAmount             Decimal?       @db.Decimal(12, 2)
+  costBreakdown            Json?
+  city                     String?
+  country                  String?
+  coverImageKey            String?
+  privacyShowRealName      Boolean        @default(false)
+  privacyShowExactLocation Boolean        @default(false)
+  status                   CampaignStatus @default(DRAFT)
+  submittedAt              DateTime?
+  publishedAt              DateTime?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+
+  beneficiary              User           @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  documents                Document[]
+  updates                  CampaignUpdate[]
+  reports                  ModerationReport[]
+
+  @@index([beneficiaryId, status])
+  @@index([status, createdAt])
+}
+
+model Document {
+  id                 String               @id @default(uuid()) @db.Uuid
+  uploadedByUserId   String               @db.Uuid
+  reviewedById       String?              @db.Uuid
+  verificationCaseId String?              @db.Uuid
+  campaignId         String?              @db.Uuid
+  type               DocumentType
+  reviewStatus       DocumentReviewStatus @default(UPLOADED)
+  storageProvider    String               @default("s3")
+  storageBucket      String?
+  storageKey         String               @unique
+  originalFilename   String
+  normalizedFilename String
+  mimeType           String
+  sizeBytes          Int
+  rejectionReason    String?
+  uploadedAt         DateTime             @default(now())
+  reviewedAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  uploadedBy         User                 @relation("UploadedDocuments", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  reviewedBy         User?                @relation("ReviewedDocuments", fields: [reviewedById], references: [id], onDelete: SetNull)
+  verificationCase   VerificationCase?    @relation(fields: [verificationCaseId], references: [id], onDelete: SetNull)
+  campaign           Campaign?            @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([verificationCaseId, type])
+  @@index([campaignId, type])
+}
+
+model AuditLog {
+  id          String          @id @default(uuid()) @db.Uuid
+  actorUserId String?         @db.Uuid
+  entityType  AuditEntityType
+  entityId    String
+  actionType  AuditActionType
+  description String
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime        @default(now())
+
+  actor       User?           @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actionType, createdAt])
+}
+
+model Notification {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @db.Uuid
+  type        NotificationType
+  title       String
+  body        String
+  href        String?
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  emailSentAt DateTime?
+  createdAt   DateTime         @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+}
+
+model NotificationPreference {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @unique @db.Uuid
+  inAppEnabled       Boolean  @default(true)
+  emailEnabled       Boolean  @default(true)
+  securityEmailsOnly Boolean  @default(false)
+  marketingEnabled   Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CampaignUpdate {
+  id         String   @id @default(uuid()) @db.Uuid
+  campaignId String   @db.Uuid
+  authorId   String   @db.Uuid
+  title      String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model ModerationReport {
+  id         String   @id @default(uuid()) @db.Uuid
+  campaignId String   @db.Uuid
+  reporterId String?  @db.Uuid
+  reason     String
+  details    String?
+  createdAt  DateTime @default(now())
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  reporter   User?    @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+}
+
+model AdminNote {
+  id                 String             @id @default(uuid()) @db.Uuid
+  verificationCaseId String             @db.Uuid
+  authorId           String             @db.Uuid
+  body               String
+  decisionStatus     VerificationStatus?
+  createdAt          DateTime           @default(now())
+
+  verificationCase   VerificationCase   @relation(fields: [verificationCaseId], references: [id], onDelete: Cascade)
+  author             User               @relation("AdminNotesAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([verificationCaseId, createdAt])
+}

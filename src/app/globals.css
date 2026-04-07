@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f7f2;
+  --foreground: #15201b;
+  --card: #ffffff;
+  --card-foreground: #15201b;
+  --popover: #ffffff;
+  --popover-foreground: #15201b;
+  --primary: #14532d;
+  --primary-foreground: #f8fff8;
+  --secondary: #ecf4ed;
+  --secondary-foreground: #173120;
+  --muted: #edf1ea;
+  --muted-foreground: #5e6d62;
+  --accent: #d8ead9;
+  --accent-foreground: #173120;
+  --destructive: #b42318;
+  --border: #d8e0d6;
+  --input: #d8e0d6;
+  --ring: #1f7a3e;
+  --success: #0f9f6e;
+  --warning: #b45309;
+  --radius: 1rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-mono: "IBM Plex Mono", "Consolas", "SFMono-Regular", monospace;
+}
+
+.dark {
+  --background: #0f1712;
+  --foreground: #ecf4ed;
+  --card: #15201b;
+  --card-foreground: #ecf4ed;
+  --popover: #15201b;
+  --popover-foreground: #ecf4ed;
+  --primary: #43a96c;
+  --primary-foreground: #081009;
+  --secondary: #17241c;
+  --secondary-foreground: #d9e6db;
+  --muted: #18231d;
+  --muted-foreground: #9ab0a0;
+  --accent: #1d3024;
+  --accent-foreground: #d9e6db;
+  --destructive: #f97066;
+  --border: #223229;
+  --input: #223229;
+  --ring: #43a96c;
+  --success: #43a96c;
+  --warning: #f5b546;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  outline-color: var(--ring);
+}
+
+.surface-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--border) 65%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--border) 65%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.shadow-soft {
+  box-shadow: 0 24px 80px -32px rgba(16, 40, 22, 0.28);
+}
