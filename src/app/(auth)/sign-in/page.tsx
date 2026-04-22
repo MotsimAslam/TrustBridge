@@ -3,9 +3,10 @@ import { SignIn } from "@clerk/nextjs";
 
 import { AuthShell } from "@/components/shared/auth-shell";
 import { Button } from "@/components/ui/button";
+import { isClerkConfigured, isProductionClerkMisconfigured } from "@/lib/auth/clerk-config";
 
 export default function SignInPage() {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  if (!isClerkConfigured()) {
     return (
       <AuthShell
         title="Connect your team"
@@ -14,6 +15,24 @@ export default function SignInPage() {
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Clerk is not configured yet. Copy the example environment values into your local setup and restart the server.
+          </p>
+          <Button asChild>
+            <Link href="/internal/status">Open internal status</Link>
+          </Button>
+        </div>
+      </AuthShell>
+    );
+  }
+
+  if (isProductionClerkMisconfigured()) {
+    return (
+      <AuthShell
+        title="Authentication setup required"
+        description="TrustBridge is running in production with Clerk test keys, so the hosted sign-in experience cannot load safely."
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Replace the current Clerk environment values with your production instance keys (`pk_live_` and `sk_live_`) and confirm the Vercel domain is added in Clerk before testing sign-in again.
           </p>
           <Button asChild>
             <Link href="/internal/status">Open internal status</Link>

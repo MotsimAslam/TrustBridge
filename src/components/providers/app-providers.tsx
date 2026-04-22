@@ -6,11 +6,12 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 
 import type { AppLocale } from "@/config/app";
+import { isClerkConfigured, isProductionClerkMisconfigured } from "@/lib/auth/clerk-config";
 
 import { ThemeProvider } from "./theme-provider";
 
 function MaybeClerkProvider({ children }: { children: React.ReactNode }) {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  if (!isClerkConfigured() || isProductionClerkMisconfigured()) {
     return <>{children}</>;
   }
 

@@ -2,6 +2,7 @@ import { CheckCircle2, CircleOff } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
+import { getClerkStatusLabel } from "@/lib/auth/clerk-config";
 import { isStorageConfigured } from "@/lib/storage/adapter";
 
 async function getDatabaseStatus() {
@@ -18,7 +19,7 @@ export default async function InternalStatusPage() {
   const checks = [
     ["Environment", process.env.NODE_ENV ?? "development"],
     ["Database", databaseConfigured ? "Configured" : "Missing DATABASE_URL"],
-    ["Clerk", process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? "Configured" : "Missing keys"],
+    ["Clerk", getClerkStatusLabel()],
     ["Storage", isStorageConfigured() ? "Configured" : "Not configured"],
     ["Email", process.env.RESEND_API_KEY ? "Configured" : "Not configured"],
   ];

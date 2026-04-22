@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isProductionClerkMisconfigured } from "@/lib/auth/clerk-config";
 import { db } from "@/server/db";
 
 export async function GET() {
@@ -20,6 +21,7 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     database,
     clerkConfigured: Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY),
+    clerkProductionReady: !isProductionClerkMisconfigured(),
     storageConfigured: Boolean(process.env.STORAGE_BUCKET),
   });
 }
