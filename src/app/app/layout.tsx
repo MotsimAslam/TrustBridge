@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 import { AppShell } from "@/components/layout/app-shell";
 import { getCurrentLocale } from "@/lib/i18n/locale";
 import { ensureAppUser } from "@/lib/auth/session";
@@ -13,7 +11,11 @@ export default async function AuthenticatedAppLayout({
   const user = await ensureAppUser();
 
   if (!user.currentRole) {
-    redirect("/app/select-role");
+    return (
+      <div className="min-h-screen bg-muted/30 px-4 py-10 md:px-6">
+        <div className="mx-auto w-full max-w-5xl">{children}</div>
+      </div>
+    );
   }
 
   return (
